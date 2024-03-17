@@ -309,6 +309,24 @@ pub const CLASSES: ClassExports = objc_classes! {
         nil
     }
 }
+- (id) currentBackgroundImage {
+    let state: UIControlState = msg![env; this state];
+    msg![env; this backgroundImageForState: state]
+}
+- (id)backgroundImageForState:(UIControlState)state {
+    let host_obj = env.objc.borrow::<UIButtonHostObject>(this);
+    host_obj.background_images_for_states.get(&state).or_else(|| {
+        host_obj.background_images_for_states.get(&UIControlStateNormal)
+    }).copied().unwrap()
+}
+- (())setBackgroundImage:(id)image forState: (UIControlState)state {
+    retain(env,image);
+    let host_obj = env.objc.borrow_mut::<UIButtonHostObject>(this);
+    if let Some(old) = host_obj.background_images_for_states.insert(state, image) {
+        release(env, old);
+    }
+    update(env, this);
+}
 
 @end
 
